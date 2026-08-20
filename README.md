@@ -64,7 +64,10 @@ Then run:
 ```bash
 uvicorn app:app --reload --port 8000
 ```
-
+or
+```bash
+python -m uvicorn app:app --reload --port 8000
+```
 ### 4. Frontend
 
 Requires Node 20+.
