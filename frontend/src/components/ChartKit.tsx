@@ -89,8 +89,8 @@ export function SalesAreaChart({ data }: { data: any[] }) {
           </linearGradient>
         </defs>
         <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" vertical={false} />
-        <XAxis dataKey="metric_date" tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} minTickGap={18} />
-        <YAxis tickFormatter={(v) => axisNumber(Number(v), "money")} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} width={52} />
+        <XAxis dataKey="metric_date" tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={18} />
+        <YAxis tickFormatter={(v) => axisNumber(Number(v), "money")} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} width={64} />
         <Tooltip content={<ChartTooltip kind="money" />} cursor={{ stroke: "var(--chart-hover)", strokeWidth: 1 }} />
         <Area type="monotone" dataKey="successful_volume" name="فروش موفق" stroke="var(--chart-primary)" fill="url(#sales-area-fill)" strokeWidth={2.5} activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--surface)" }} />
       </AreaChart>
@@ -104,11 +104,11 @@ export function VolumeBarChart({ data, dataKey = "successful_volume", xKey = "ho
     <ChartFrame className={className}>
       <BarChart data={data} margin={{ top: showLabels ? 20 : 8, right: 8, left: 2, bottom: 2 }}>
         <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" vertical={false} />
-        <XAxis dataKey={xKey} tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} minTickGap={12} />
-        <YAxis tickFormatter={(v) => axisNumber(Number(v), kind)} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} width={52} />
+        <XAxis dataKey={xKey} tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={12} />
+        <YAxis tickFormatter={(v) => axisNumber(Number(v), kind)} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} width={64} />
         <Tooltip content={<ChartTooltip kind={kind} />} cursor={{ fill: "var(--chart-hover-fill)" }} />
         <Bar dataKey={dataKey} name={name} fill="var(--chart-primary)" radius={[7, 7, 2, 2]} maxBarSize={34}>
-          {showLabels && <LabelList dataKey={dataKey} position="top" formatter={(v: any) => compactNumber(Number(v), kind)} fill="var(--chart-label)" fontSize={8} />}
+          {showLabels && <LabelList dataKey={dataKey} position="top" formatter={(v: any) => compactNumber(Number(v), kind)} fill="var(--chart-label)" fontSize={10} />}
         </Bar>
       </BarChart>
     </ChartFrame>
@@ -121,11 +121,11 @@ export function SuccessBarChart({ data }: { data: any[] }) {
     <ChartFrame className="small">
       <BarChart data={data} layout="vertical" margin={{ top: 6, right: 10, left: 2, bottom: 4 }}>
         <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" horizontal={false} />
-        <XAxis type="number" domain={[0, 1]} tickFormatter={(v) => axisNumber(Number(v), "percent")} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} />
-        <YAxis dataKey="psp_code" type="category" width={58} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} />
+        <XAxis type="number" domain={[0, 1]} tickFormatter={(v) => axisNumber(Number(v), "percent")} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} />
+        <YAxis dataKey="psp_code" type="category" width={64} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} />
         <Tooltip content={<ChartTooltip kind="percent" />} cursor={{ fill: "var(--chart-hover-fill)" }} />
         <Bar dataKey="success_rate" name="نرخ موفقیت" fill="var(--chart-secondary)" radius={[0, 7, 7, 0]} maxBarSize={22}>
-          {showLabels && <LabelList dataKey="success_rate" position="right" formatter={(v: any) => compactNumber(Number(v), "percent")} fill="var(--chart-label)" fontSize={8} />}
+          {showLabels && <LabelList dataKey="success_rate" position="right" formatter={(v: any) => compactNumber(Number(v), "percent")} fill="var(--chart-label)" fontSize={10} />}
         </Bar>
       </BarChart>
     </ChartFrame>
@@ -183,18 +183,18 @@ export function MetricChart({ title, data, x, y, type, kind = "number", percent 
             {type === "bar" ? (
               <BarChart data={data} margin={{ top: showLabels ? 20 : 8, right: 8, left: 2, bottom: 2 }}>
                 <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" vertical={false} />
-                <XAxis dataKey={x} interval={0} tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 8 }} tickLine={false} axisLine={false} minTickGap={4} />
-                <YAxis tickFormatter={(v) => axisNumber(Number(v), valueKind)} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} width={52} domain={percent ? [0, 1] : undefined} />
+                <XAxis dataKey={x} interval={0} tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={4} />
+                <YAxis tickFormatter={(v) => axisNumber(Number(v), valueKind)} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} width={64} domain={percent ? [0, 1] : undefined} />
                 <Tooltip content={tooltip} cursor={{ fill: "var(--chart-hover-fill)" }} />
                 <Bar dataKey={y} name={title} fill="var(--chart-primary)" radius={[7, 7, 2, 2]} maxBarSize={34}>
-                  {showLabels && <LabelList dataKey={y} position="top" formatter={(v: any) => compactNumber(Number(v), valueKind)} fill="var(--chart-label)" fontSize={8} />}
+                  {showLabels && <LabelList dataKey={y} position="top" formatter={(v: any) => compactNumber(Number(v), valueKind)} fill="var(--chart-label)" fontSize={10} />}
                 </Bar>
               </BarChart>
             ) : type === "line" ? (
               <LineChart data={data} margin={{ top: 12, right: 8, left: 2, bottom: 2 }}>
                 <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" vertical={false} />
-                <XAxis dataKey={x} tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} minTickGap={12} />
-                <YAxis tickFormatter={(v) => axisNumber(Number(v), valueKind)} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} width={48} domain={percent ? [0, 1] : undefined} />
+                <XAxis dataKey={x} tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={12} />
+                <YAxis tickFormatter={(v) => axisNumber(Number(v), valueKind)} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} width={54} domain={percent ? [0, 1] : undefined} />
                 <Tooltip content={tooltip} cursor={{ stroke: "var(--chart-hover)", strokeWidth: 1 }} />
                 <Line type="monotone" dataKey={y} name={title} stroke="var(--chart-secondary)" strokeWidth={2.5} dot={{ r: 2.5, fill: "var(--chart-secondary)", strokeWidth: 0 }} activeDot={{ r: 5, fill: "var(--chart-secondary)", stroke: "var(--surface)", strokeWidth: 2 }} />
               </LineChart>
@@ -202,8 +202,8 @@ export function MetricChart({ title, data, x, y, type, kind = "number", percent 
               <AreaChart data={data} margin={{ top: 12, right: 8, left: 2, bottom: 2 }}>
                 <defs><linearGradient id={`metric-area-${y}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--chart-primary)" stopOpacity={0.28} /><stop offset="100%" stopColor="var(--chart-primary)" stopOpacity={0.02} /></linearGradient></defs>
                 <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" vertical={false} />
-                <XAxis dataKey={x} tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} minTickGap={16} />
-                <YAxis tickFormatter={(v) => axisNumber(Number(v), valueKind)} tick={{ fill: "var(--chart-text)", fontSize: 9 }} tickLine={false} axisLine={false} width={52} />
+                <XAxis dataKey={x} tickFormatter={chartTick} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={16} />
+                <YAxis tickFormatter={(v) => axisNumber(Number(v), valueKind)} tick={{ fill: "var(--chart-text)", fontSize: 11 }} tickLine={false} axisLine={false} width={64} />
                 <Tooltip content={tooltip} cursor={{ stroke: "var(--chart-hover)", strokeWidth: 1 }} />
                 <Area type="monotone" dataKey={y} name={title} stroke="var(--chart-primary)" fill={`url(#metric-area-${y})`} strokeWidth={2.5} activeDot={{ r: 5, fill: "var(--chart-primary)", stroke: "var(--surface)", strokeWidth: 2 }} />
               </AreaChart>
