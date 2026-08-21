@@ -21,30 +21,7 @@ export const getCustomers=(id:string)=>req(`/merchants/${encodeURIComponent(id)}
 export const getCalendar=(id:string)=>req(`/merchants/${encodeURIComponent(id)}/calendar`);
 export const getSeasonality=(id:string)=>req(`/merchants/${encodeURIComponent(id)}/seasonality`);
 export const getHealth=(id:string)=>req(`/merchants/${encodeURIComponent(id)}/health-score`);
-export type SessionFilters={
- search?:string;
- status?:string;
- psp?:string;
- dateFrom?:string;
- dateTo?:string;
- minAmount?:string;
- maxAmount?:string;
- minAttempts?:string;
-};
-export const getSessions=(id:string,filters:SessionFilters={},offset=0)=>{
- const p=new URLSearchParams();
- p.set("limit","25");
- p.set("offset",String(offset));
- if(filters.search)p.set("search",filters.search);
- if(filters.status&&filters.status!=="all")p.set("status",filters.status);
- if(filters.psp)p.set("psp",filters.psp);
- if(filters.dateFrom)p.set("date_from",filters.dateFrom);
- if(filters.dateTo)p.set("date_to",filters.dateTo);
- if(filters.minAmount)p.set("min_amount",filters.minAmount);
- if(filters.maxAmount)p.set("max_amount",filters.maxAmount);
- if(filters.minAttempts)p.set("min_attempts",filters.minAttempts);
- return req(`/merchants/${encodeURIComponent(id)}/sessions?${p.toString()}`);
-};
+export const getSessions=(id:string,search="",status="all",offset=0)=>req(`/merchants/${encodeURIComponent(id)}/sessions?search=${encodeURIComponent(search)}&status=${status}&limit=25&offset=${offset}`);
 export const getSession=(id:string)=>req(`/sessions/${encodeURIComponent(id)}`);
 export const getInsightDetail=(id:string,type:string)=>req(`/insights/${encodeURIComponent(id)}/${encodeURIComponent(type)}`);
 export const getEvidence=(id:string,type:string)=>req(`/insights/${encodeURIComponent(id)}/${encodeURIComponent(type)}/sessions?limit=100`);

@@ -5,7 +5,7 @@ const items=[
  ["analytics","تحلیل فروش و زمان",ChartNoAxesCombined],
  ["insights","Insightهای هوشمند",BrainCircuit],
  ["benchmark","Benchmark صنفی",GitCompareArrows],
- ["sessions","کاوش‌گر تراکنش‌ها",ReceiptText],
+ ["sessions","Session Explorer",ReceiptText],
  ["customers","تحلیل مشتری",Users],
  ["assistant","دستیار تحلیلی",Bot],
 ] as const;

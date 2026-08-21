@@ -1,11 +1,49 @@
 import { useEffect, useState } from "react";
-import { getSessions, getSession } from "../api/client";
-import { Search } from "lucide-react";
+import { getSessions, getSession, getPSPs, SessionFilters } from "../api/client";
+import { Search, SlidersHorizontal, X, RotateCcw } from "lucide-react";
 
 const nf = (n: number) =>
   new Intl.NumberFormat("fa-IR").format(Math.round(n || 0));
 
 const money = (n: number) => nf(n) + " ریال";
+
+const dt = (v: any) => {
+  if (!v) return "—";
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return String(v);
+  return new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(d);
+};
+
+const STATUS_OPTIONS = [
+  ["all", "همه وضعیت‌ها"],
+  ["success", "موفق"],
+  ["failed", "ناموفق"],
+  ["recovered", "بازیابی‌شده"],
+  ["retry", "Retry"],
+  ["no_attempt", "بدون Attempt"],
+] as const;
+
+const emptyFilters: SessionFilters = {
+  search: "",
+  status: "all",
+  psp: "",
+  dateFrom: "",
+  dateTo: "",
+  minAmount: "",
+  maxAmount: "",
+  minAttempts: "",
+};
+
+function countActive(f: SessionFilters) {
+  let n = 0;
+  if (f.psp) n++;
+  if (f.dateFrom) n++;
+  if (f.dateTo) n++;
+  if (f.minAmount) n++;
+  if (f.maxAmount) n++;
+  if (f.minAttempts) n++;
+  return n;
+}
 
 export default function Sessions({ merchant }: { merchant: string }) {
   const [data, setData] = useState<any>({
@@ -13,20 +51,43 @@ export default function Sessions({ merchant }: { merchant: string }) {
     total: 0,
   });
 
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState("all");
+  const [filters, setFilters] = useState<SessionFilters>(emptyFilters);
+  const [draft, setDraft] = useState<SessionFilters>(emptyFilters);
+  const [showFilters, setShowFilters] = useState(false);
+  const [psps, setPsps] = useState<any[]>([]);
   const [offset, setOffset] = useState(0);
   const [detail, setDetail] = useState<any>();
 
   useEffect(() => {
+    if (merchant) getPSPs(merchant).then(setPsps).catch(() => setPsps([]));
+  }, [merchant]);
+
+  useEffect(() => {
     if (merchant) {
-      getSessions(merchant, q, status, offset).then(setData);
+      getSessions(merchant, filters, offset).then(setData);
     }
-  }, [merchant, q, status, offset]);
+  }, [merchant, filters, offset]);
 
   const open = (id: string) => {
     getSession(id).then(setDetail);
   };
+
+  const openFilters = () => {
+    setDraft(filters);
+    setShowFilters(true);
+  };
+
+  const applyFilters = () => {
+    setOffset(0);
+    setFilters(draft);
+    setShowFilters(false);
+  };
+
+  const clearAll = () => {
+    setDraft(emptyFilters);
+  };
+
+  const activeCount = countActive(filters);
 
   return (
     <>
@@ -45,10 +106,10 @@ export default function Sessions({ merchant }: { merchant: string }) {
           <div className="search">
             <Search size={16} />
             <input
-              value={q}
+              value={filters.search}
               onChange={(e) => {
                 setOffset(0);
-                setQ(e.target.value);
+                setFilters((f) => ({ ...f, search: e.target.value }));
               }}
               placeholder="جستجوی Session Key"
             />
@@ -56,20 +117,23 @@ export default function Sessions({ merchant }: { merchant: string }) {
 
           <div className="select-wrap status-select">
             <select
-              value={status}
+              value={filters.status}
               onChange={(e) => {
                 setOffset(0);
-                setStatus(e.target.value);
+                setFilters((f) => ({ ...f, status: e.target.value }));
               }}
             >
-              <option value="all">همه وضعیت‌ها</option>
-              <option value="success">موفق</option>
-              <option value="failed">ناموفق</option>
-              <option value="recovered">بازیابی‌شده</option>
-              <option value="retry">Retry</option>
-              <option value="no_attempt">بدون Attempt</option>
+              {STATUS_OPTIONS.map(([v, label]) => (
+                <option key={v} value={v}>{label}</option>
+              ))}
             </select>
           </div>
+
+          <button className="filter-toggle-btn" onClick={openFilters}>
+            <SlidersHorizontal size={15} />
+            فیلترهای پیشرفته
+            {activeCount > 0 && <span className="filter-count-badge">{activeCount}</span>}
+          </button>
         </div>
 
         <div className="table-scroll">
@@ -77,6 +141,7 @@ export default function Sessions({ merchant }: { merchant: string }) {
             <thead>
               <tr>
                 <th>Session</th>
+                <th>تاریخ و زمان</th>
                 <th>مبلغ</th>
                 <th>Attempt</th>
                 <th>اولین تلاش</th>
@@ -94,6 +159,7 @@ export default function Sessions({ merchant }: { merchant: string }) {
                   className="click-row"
                 >
                   <td>{s.session_key}</td>
+                  <td>{dt(s.created_at)}</td>
                   <td>{money(s.amount)}</td>
                   <td>{nf(s.attempt_count)}</td>
                   <td>{s.first_try_status || "—"}</td>
@@ -138,6 +204,132 @@ export default function Sessions({ merchant }: { merchant: string }) {
           </div>
         </div>
       </div>
+
+      {showFilters && (
+        <div className="modal-backdrop" onClick={() => setShowFilters(false)}>
+          <div className="modal filter-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <div>
+                <span className="eyebrow">ADVANCED FILTERS</span>
+                <h2>فیلترهای پیشرفته</h2>
+              </div>
+
+              <button className="icon-btn" onClick={() => setShowFilters(false)}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="filter-grid">
+              <div className="field">
+                <label>جستجوی Session Key</label>
+                <div className="search">
+                  <Search size={16} />
+                  <input
+                    value={draft.search}
+                    onChange={(e) => setDraft((f) => ({ ...f, search: e.target.value }))}
+                    placeholder="مثلاً 1739273"
+                  />
+                </div>
+              </div>
+
+              <div className="field">
+                <label>وضعیت تراکنش</label>
+                <div className="select-wrap">
+                  <select className="w100 search"
+                    value={draft.status}
+                    onChange={(e) => setDraft((f) => ({ ...f, status: e.target.value }))}
+                  >
+                    {STATUS_OPTIONS.map(([v, label]) => (
+                      <option key={v} value={v}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="field">
+                <label>PSP</label>
+                <div className="select-wrap">
+                  <select className="search"
+                    value={draft.psp}
+                    onChange={(e) => setDraft((f) => ({ ...f, psp: e.target.value }))}
+                  >
+                    <option value="">همه PSPها</option>
+                    {psps.map((p: any) => (
+                      <option key={p.psp_code} value={p.psp_code}>{p.psp_code}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="field">
+                <label>حداقل تعداد Attempt</label>
+                <input
+                  type="number"
+                  min={0}
+                  className="field-input"
+                  value={draft.minAttempts}
+                  onChange={(e) => setDraft((f) => ({ ...f, minAttempts: e.target.value }))}
+                  placeholder="مثلاً 2"
+                />
+              </div>
+
+              <div className="field">
+                <label>از تاریخ و ساعت</label>
+                <input
+                  type="datetime-local"
+                  className="field-input"
+                  value={draft.dateFrom}
+                  onChange={(e) => setDraft((f) => ({ ...f, dateFrom: e.target.value }))}
+                />
+              </div>
+
+              <div className="field">
+                <label>تا تاریخ و ساعت</label>
+                <input
+                  type="datetime-local"
+                  className="field-input"
+                  value={draft.dateTo}
+                  onChange={(e) => setDraft((f) => ({ ...f, dateTo: e.target.value }))}
+                />
+              </div>
+
+              <div className="field">
+                <label>حداقل مبلغ (ریال)</label>
+                <input
+                  type="number"
+                  min={0}
+                  className="field-input"
+                  value={draft.minAmount}
+                  onChange={(e) => setDraft((f) => ({ ...f, minAmount: e.target.value }))}
+                  placeholder="مثلاً 100000"
+                />
+              </div>
+
+              <div className="field">
+                <label>حداکثر مبلغ (ریال)</label>
+                <input
+                  type="number"
+                  min={0}
+                  className="field-input"
+                  value={draft.maxAmount}
+                  onChange={(e) => setDraft((f) => ({ ...f, maxAmount: e.target.value }))}
+                  placeholder="مثلاً 5000000"
+                />
+              </div>
+            </div>
+
+            <div className="filter-actions">
+              <button className="filter-clear-btn" onClick={clearAll}>
+                <RotateCcw size={14} />
+                پاک کردن همه فیلترها
+              </button>
+              <button className="filter-apply-btn" onClick={applyFilters}>
+                اعمال فیلترها
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {detail && (
         <div

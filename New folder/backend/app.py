@@ -610,19 +610,19 @@ def stats():
 
 @app.get("/api/merchants/{merchant_id}/customers")
 def merchant_customers(merchant_id: str):
-    # All metrics below are derived directly from identifiable payer_card_key records.
-    # We intentionally omit metrics that cannot be calculated from the available schema.
-    summary = query_one(
+    rows = query(
         """
         WITH c AS (
             SELECT
                 payer_card_key,
-                COUNT(DISTINCT session_key) FILTER (
-                    WHERE try_status IN ('Verified', 'Paid')
-                ) AS orders,
-                COALESCE(SUM(amount) FILTER (
-                    WHERE try_status IN ('Verified', 'Paid')
-                ), 0) AS spend,
+                COUNT(DISTINCT session_key) AS orders,
+                SUM(
+                    CASE
+                        WHEN try_status IN ('Verified', 'Paid')
+                        THEN amount
+                        ELSE 0
+                    END
+                ) AS spend,
                 MIN(created_at) AS first_seen,
                 MAX(created_at) AS last_seen
             FROM attempts
@@ -632,120 +632,32 @@ def merchant_customers(merchant_id: str):
             GROUP BY payer_card_key
         )
         SELECT
-            COUNT(*) FILTER (WHERE orders > 0) AS customers,
+            COUNT(*) AS customers,
             COUNT(*) FILTER (WHERE orders > 1) AS repeat_customers,
-            AVG(orders) FILTER (WHERE orders > 0) AS avg_orders,
-            AVG(spend) FILTER (WHERE orders > 0) AS avg_purchase,
-            COALESCE(SUM(spend), 0) AS customer_spend,
+            AVG(orders) AS avg_orders,
+            SUM(spend) AS customer_spend,
             COUNT(*) FILTER (WHERE orders >= 5) AS vip,
             COUNT(*) FILTER (WHERE orders BETWEEN 2 AND 4) AS loyal,
             COUNT(*) FILTER (WHERE orders = 1) AS new_customers
         FROM c
         """,
         [merchant_id],
-    ) or {}
-
-    top_revenue = query_one(
-        """
-        SELECT payer_card_key AS customer, SUM(amount) AS amount
-        FROM attempts
-        WHERE merchant_key = ?
-          AND payer_card_key IS NOT NULL AND payer_card_key <> ''
-          AND try_status IN ('Verified', 'Paid')
-        GROUP BY payer_card_key
-        ORDER BY amount DESC, customer
-        LIMIT 1
-        """,
-        [merchant_id],
-    )
-    top_orders = query_one(
-        """
-        SELECT payer_card_key AS customer, COUNT(DISTINCT session_key) AS orders
-        FROM attempts
-        WHERE merchant_key = ?
-          AND payer_card_key IS NOT NULL AND payer_card_key <> ''
-          AND try_status IN ('Verified', 'Paid')
-        GROUP BY payer_card_key
-        ORDER BY orders DESC, customer
-        LIMIT 1
-        """,
-        [merchant_id],
-    )
-    top_order_by_amount = query_one(
-        """
-        SELECT payer_card_key AS customer, session_key, amount, created_at AS date
-        FROM attempts
-        WHERE merchant_key = ?
-          AND payer_card_key IS NOT NULL AND payer_card_key <> ''
-          AND try_status IN ('Verified', 'Paid')
-        ORDER BY amount DESC, created_at DESC
-        LIMIT 1
-        """,
-        [merchant_id],
-    )
-    newest_customer = query_one(
-        """
-        WITH c AS (
-            SELECT payer_card_key, MIN(created_at) AS first_seen
-            FROM attempts
-            WHERE merchant_key = ?
-              AND payer_card_key IS NOT NULL AND payer_card_key <> ''
-              AND try_status IN ('Verified', 'Paid')
-            GROUP BY payer_card_key
-        )
-        SELECT payer_card_key AS customer, first_seen AS date
-        FROM c
-        ORDER BY first_seen DESC NULLS LAST
-        LIMIT 1
-        """,
-        [merchant_id],
-    )
-    longest_tenure_customer = query_one(
-        """
-        WITH c AS (
-            SELECT
-                payer_card_key,
-                COUNT(DISTINCT session_key) AS orders,
-                MIN(created_at) AS first_seen,
-                MAX(created_at) AS last_seen
-            FROM attempts
-            WHERE merchant_key = ?
-              AND payer_card_key IS NOT NULL AND payer_card_key <> ''
-              AND try_status IN ('Verified', 'Paid')
-            GROUP BY payer_card_key
-        )
-        SELECT
-            payer_card_key AS customer,
-            orders,
-            first_seen,
-            last_seen,
-            DATE_DIFF('day', first_seen, last_seen) AS tenure_days
-        FROM c
-        WHERE orders > 1
-        ORDER BY tenure_days DESC NULLS LAST, orders DESC
-        LIMIT 1
-        """,
-        [merchant_id],
     )
 
-    customers = int(summary.get("customers") or 0)
-    repeat = int(summary.get("repeat_customers") or 0)
-    new_customers = int(summary.get("new_customers") or 0)
+    r = rows[0] if rows else {}
+
+    customers = int(r.get("customers") or 0)
+    repeat = int(r.get("repeat_customers") or 0)
+
     return {
+        **r,
         "customers": customers,
         "repeat_customers": repeat,
         "repeat_rate": (repeat / customers * 100) if customers else 0,
-        "avg_orders": float(summary.get("avg_orders") or 0),
-        "avg_purchase": float(summary.get("avg_purchase") or 0),
-        "customer_spend": float(summary.get("customer_spend") or 0),
-        "vip": int(summary.get("vip") or 0),
-        "loyal": int(summary.get("loyal") or 0),
-        "new_customers": new_customers,
-        "top_customer_by_revenue": top_revenue,
-        "top_customer_by_orders": top_orders,
-        "top_order_by_amount": top_order_by_amount,
-        "newest_customer": newest_customer,
-        "longest_tenure_customer": longest_tenure_customer,
+        "avg_orders": float(r.get("avg_orders") or 0),
+        "vip": int(r.get("vip") or 0),
+        "loyal": int(r.get("loyal") or 0),
+        "new_customers": int(r.get("new_customers") or 0),
     }
 
 
@@ -758,12 +670,6 @@ def merchant_sessions(
     merchant_id: str,
     search: Optional[str] = None,
     status: Optional[str] = None,
-    psp: Optional[str] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    min_amount: Optional[float] = None,
-    max_amount: Optional[float] = None,
-    min_attempts: Optional[int] = None,
     limit: int = Query(default=25, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
@@ -790,30 +696,6 @@ def merchant_sessions(
         }
 
         where += " AND " + mapping[status]
-
-    if psp:
-        where += " AND last_psp_code = ?"
-        params.append(psp)
-
-    if date_from:
-        where += " AND created_at >= ?"
-        params.append(date_from)
-
-    if date_to:
-        where += " AND created_at <= ?"
-        params.append(date_to)
-
-    if min_amount is not None:
-        where += " AND amount >= ?"
-        params.append(min_amount)
-
-    if max_amount is not None:
-        where += " AND amount <= ?"
-        params.append(max_amount)
-
-    if min_attempts is not None:
-        where += " AND attempt_count >= ?"
-        params.append(min_attempts)
 
     count = query_one(
         f"SELECT COUNT(*) AS total FROM sessions {where}",
