@@ -1039,13 +1039,18 @@ def build_llm_context(merchant_id: str):
     # ---------------------------------------------------------
 
     try:
+        # merchant_psp_metrics stores this rate as `success_rate`, not
+        # `final_success_rate` (that column only exists on merchant_metrics).
+        # Selecting the wrong name here raised a Catalog Error on every
+        # call, was swallowed by this except, and silently emptied PSP
+        # data out of the LLM's context.
         psps = query(
             """
             SELECT
                 psp_code,
                 sessions,
                 successful_sessions,
-                final_success_rate,
+                success_rate,
                 successful_volume
             FROM merchant_psp_metrics
             WHERE merchant_key=?
