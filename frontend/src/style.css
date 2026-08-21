@@ -110,4 +110,4 @@ html{scrollbar-width:thin;scrollbar-color:var(--scrollbar-thumb) var(--scrollbar
 .pie-legend-label{display:inline-flex;gap:7px;align-items:center;color:var(--chart-label);font-size:11px;white-space:nowrap;margin: 3px 0 3px 0;}
 .pie-legend-label b{color:var(--text);font-size:11px}
 @media(max-width:780px){.merchant-select{min-width:150px;max-width:calc(100vw - 110px)}.status-select{width:100%}.status-select select{width:100%}.pie-chart-frame{height:230px}.merchant-select select{margin-right: 30px !important;}}
-@media(max-width:480px){.merchant-select{max-width:calc(100vw - 105px)}.merchant-select select{font-size:9px;}.pie-chart-frame{height:220px}}
+@media(max-width:480px){.merchant-select{max-width:calc(100vw - 105px)}.merchant-select select{font-size:9px;}.pie-chart-frame{height:220px}.merchant-select select{margin-right: 50px !important;height: 41px;}}
